@@ -1,0 +1,232 @@
+# **Exploratory Data Analysis of Olympics Data**
+
+## **About the Project**
+
+Exploratory Data Analysis or EDA is an essential part of data analysis which helps you to understand data in a better way. The project focuses on data manipulation and visualization.
+
+We will perform EDA on Olympics data using R. We will focus more on analyzing and visualizing the data using R libraries and packages.
+
+## **About the Dataset**
+
+Olympics dataset is an historical data on modern olympics. It includes data from Athens 1896 to Rio 2016. It has details on summer and winter olympics.
+
+You can download the data from this link: <https://www.kaggle.com/heesoo37/120-years-of-olympic-history-athletes-and-results>
+
+
+
+
+
+## **Reading the data**
+
+```{r}
+
+setwd("D:/Tejaswini/P10.R")
+athletes = read.csv("athlete_events.csv", stringsAsFactors = F)
+
+regions = read.csv("noc_regions.csv",stringsAsFactors = F)
+
+```
+
+## **Initial Processing**
+
+
+```{r}
+head(athletes)
+tail(regions)
+
+```
+
+To display top 2 rows
+
+```{r}
+head(athletes, n= 2L)
+```
+
+#### dim(), nrow() & col()
+
+
+
+```{r}
+a <- dim(athletes)
+print(paste0("The number of rows in the athletes data are ", a[1]))
+print(paste0("The number of columns in the athletes data are ", a[2]))
+```
+
+
+
+```{r}
+nrow(athletes)
+ncol(regions)
+```
+
+#### colnames() & names()
+
+
+
+```{r}
+colnames(athletes)
+attributes <- names(athletes)
+attributes
+```
+
+
+
+## **Merging the dataframes**
+
+
+
+```{r}
+athletes_df <- merge(x = athletes, y= regions, by= "NOC")
+dim(athletes_df)
+names(athletes_df)
+```
+
+From the output we can see that the column names are not consistent. The first letter of newly added columns are not in caps. We will make changes here to match the other columns.
+
+```{r}
+colnames(athletes_df)[16] <- "Region"
+colnames(athletes_df)[17] <- "Notes"
+names(athletes_df)
+```
+
+## **Data Description**
+
+#### str()
+
+
+
+```{r}
+str(athletes_df)
+```
+
+#### summary()
+
+
+
+```{r}
+summary(athletes_df$Age)
+```
+
+
+
+```{r}
+athletes_df$Sex <- as.factor(athletes_df$Sex)
+summary(athletes_df$Sex)
+```
+
+
+
+```{r}
+cols = c("Team", "Season", "City", "Sport", "Medal", "Region")
+athletes_df[cols]= lapply(athletes_df[cols], factor)
+str(athletes_df)
+summary(athletes_df)
+```
+
+Below code is used if you have to use the whole dataframe. It will identify the columns which are categorical or discrete and separate them to levels. It is important to convert these columns to factors if they are not in factors. It will give better results while performing statistical analysis or while building machine learning models.
+
+```{r}
+factor_data <- as.data.frame(unclass(athletes),stringsAsFactors = TRUE)
+str(factor_data)
+```
+
+
+## **Null Values**
+
+
+
+```{r}
+sapply(athletes_df, function(x)sum(is.na(x)))
+```
+
+
+
+```{r}
+null_cols <- sapply(athletes_df, function(x) sum(is.na(x)))
+null_cols <- null_cols[null_cols>0]
+print(paste0(names(null_cols)," :",unname(null_cols)))
+```
+
+## **Analysis and Interpretation**
+
+
+
+```{r}
+India_details = subset(athletes_df, Region == 'India')
+head(India_details, 3L)
+dim(India_details)
+```
+
+###Let us create a subset which has the details of athletes from Germany and New Zealand###
+
+```{r}
+details_2 = subset(athletes_df, Region== c('Germany','New Zealand'))
+dim(details_2)
+```
+
+#### **Top ten countries in terms of participation**
+
+
+
+```{r}
+top_countries = summary(athletes_df$Region)
+top_countries[1:10]
+```
+
+#a simple bar plot to visualize the top ten participating nations#
+
+```{r}
+barplot(top_countries[1:10],las=2, cex.names=0.70,xlab="Country",ylab="Athletes Count",col="blue",main="Top Ten Participating Countries",border="red")
+```
+
+#### Age distribution
+
+
+
+```{r}
+not_null_age = athletes_df[complete.cases(athletes_df$Age), ]
+summary(not_null_age$Age) #There is no null value
+```
+
+
+```{r}
+#install.packages("ggplot2")
+library(ggplot2)
+qplot(not_null_age$Age, geom = "histogram",xlab= "Age", ylab = "Athletes", bins= 30, main = "Age Distribution")
+```
+
+#### Weight Distribution
+
+
+
+```{r}
+weight_not_null = athletes_df[complete.cases(athletes_df$Weight),]
+qplot(Weight, data = weight_not_null, geom = "histogram", bins= 50, fill= Sex, ylab = "Athletes Count", main = "Weight Distribution")
+```
+
+##  Medals
+
+
+
+```{r}
+print(paste0("The total gold medal count is ", summary(athletes_df$Medal)[2]))
+```
+
+#Creating a subset of athletes who won gold medals
+
+```{r}
+gold_medal = subset(athletes_df, Medal == "Gold")
+```
+
+#Top ten countries with highest number of gold medals
+
+```{r}
+noquote(names(summary(gold_medal$Region)[1:10]))
+```
+
+#Using a bar plot to visualize the top ten countries with gold medals
+
+```{r}
+gold_nations = summary(gold_medal$Region)[1:10]
+barplot(gold_nations[1:10],las=2, cex.names=0.70,xlab="Country",ylab="Gold Medals",col="blue",main="Top Ten Countries with Gold Medals",border="red")
+```
